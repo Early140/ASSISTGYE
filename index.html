@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Gimnasia Comodoro | Asistencia Formativas</title>
+<style>
+:root{
+  --petroleo:#073233;
+  --petroleo2:#09292b;
+  --petroleo3:#0d4141;
+  --verde:#00a651;
+  --verde2:#21c96b;
+  --lima:#6fb42c;
+  --dorado:#d8bd61;
+  --blanco:#f7faf8;
+  --gris:#aebcba;
+  --borde:#1d5554;
+  --rojo:#d84a4a;
+  --amarillo:#e4b83d;
+  --azul:#3395d6;
+  --sombra:0 12px 30px rgba(0,0,0,.20);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  background:linear-gradient(160deg,var(--petroleo2),#061f20 60%,#092b2c);
+  color:var(--blanco);
+  min-height:100vh;
+}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+
+.topbar{
+  background:var(--petroleo);
+  border-bottom:3px solid var(--dorado);
+  position:sticky;top:0;z-index:20;
+  box-shadow:0 4px 16px rgba(0,0,0,.25)
+}
+.topbar-inner{
+  max-width:1280px;margin:auto;padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:18px
+}
+.brand{display:flex;align-items:center;gap:13px}
+.shield{
+  width:64px;height:64px;border-radius:14px;
+  border:2px solid var(--dorado);
+  display:grid;place-items:center;
+  background:linear-gradient(145deg,#0c4746,#052627);
+  font-weight:900;color:var(--dorado);font-size:17px
+}
+.logo-box{padding:4px;background:#fff;border-color:var(--dorado)}
+.logo-box img{width:100%;height:100%;object-fit:contain;border-radius:8px}
+.brand h1{font-size:19px;margin:0;letter-spacing:.3px}
+.brand small{color:var(--gris)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{
+  border:1px solid var(--borde);background:#0a3a39;color:#cce0dd;
+  padding:10px 13px;border-radius:10px;font-weight:800
+}
+.tab.active{background:var(--verde);border-color:var(--verde);color:white}
+
+.wrap{max-width:1280px;margin:auto;padding:22px}
+.hero{
+  background:linear-gradient(125deg,#0b4443,#073233 55%,#0c3a39);
+  border:1px solid var(--borde);
+  border-radius:20px;padding:23px;margin-bottom:20px;box-shadow:var(--sombra);
+  display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap
+}
+.hero h2{margin:0 0 6px;font-size:27px}
+.hero p{margin:0;color:#c1d2cf}
+.hero .accent{color:var(--dorado)}
+
+.card{
+  background:rgba(7,50,51,.94);
+  border:1px solid var(--borde);
+  border-radius:18px;padding:20px;margin-bottom:18px;
+  box-shadow:var(--sombra)
+}
+.card-title{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;margin-bottom:16px
+}
+.card-title h3{margin:0;font-size:19px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:13px}
+.col-2{grid-column:span 2}.col-3{grid-column:span 3}.col-4{grid-column:span 4}
+.col-5{grid-column:span 5}.col-6{grid-column:span 6}.col-8{grid-column:span 8}.col-12{grid-column:span 12}
+label{display:block;color:#c6d5d3;font-size:12px;font-weight:800;margin:0 0 6px;text-transform:uppercase;letter-spacing:.35px}
+input,select,textarea{
+  width:100%;border:1px solid var(--borde);border-radius:10px;
+  background:#061f20;color:white;padding:11px 12px;outline:none
+}
+input:focus,select:focus,textarea:focus{border-color:var(--verde2);box-shadow:0 0 0 3px rgba(33,201,107,.12)}
+textarea{min-height:78px;resize:vertical}
+
+.btn{
+  border:0;border-radius:10px;padding:11px 14px;font-weight:900;color:white
+}
+.btn-primary{background:var(--verde)}
+.btn-secondary{background:#285f5d}
+.btn-gold{background:var(--dorado);color:#17302e}
+.btn-danger{background:var(--rojo)}
+.btn-warning{background:var(--amarillo);color:#28220b}
+.btn-blue{background:var(--azul)}
+.btn-outline{background:transparent;border:1px solid #2f6a67}
+.btn-sm{padding:7px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.categories{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));
+  gap:9px;margin-top:10px
+}
+.cat{
+  background:#0a3b3a;border:1px solid #1d5b58;color:#d8e7e4;
+  border-radius:12px;padding:11px 8px;font-weight:900;text-align:center
+}
+.cat.active{background:var(--verde);border-color:#42dd88;color:#fff;box-shadow:0 6px 16px rgba(0,166,81,.22)}
+
+.toolbar{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap
+}
+.statusbar{
+  display:flex;gap:9px;flex-wrap:wrap;margin:14px 0
+}
+.badge{
+  background:#092829;border:1px solid var(--borde);border-radius:999px;
+  padding:7px 11px;color:#c8d9d6;font-weight:800;font-size:13px
+}
+.badge strong{color:#fff}
+
+.table-wrap{overflow:auto;border:1px solid var(--borde);border-radius:14px}
+table{width:100%;border-collapse:collapse;min-width:790px;background:#082b2c}
+th{
+  text-align:left;background:#0d4141;padding:12px 11px;color:#dbe8e5;
+  font-size:12px;text-transform:uppercase;letter-spacing:.35px
+}
+td{padding:11px;border-top:1px solid #174645;color:#edf4f2}
+tr:hover td{background:#0a3636}
+.inactive-row{opacity:.6}
+.action-cell{display:flex;gap:6px;flex-wrap:wrap}
+
+.players-att{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:11px
+}
+.att-card{
+  border:1px solid var(--borde);background:#092d2e;border-radius:14px;padding:13px
+}
+.att-name{font-weight:900;font-size:15px}
+.att-meta{color:#9eb5b2;font-size:12px;margin-top:3px}
+.states{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:11px}
+.state{
+  padding:8px 5px;border-radius:8px;border:1px solid #255a58;background:#153f3f;
+  color:#d8e6e3;font-weight:900;font-size:11px
+}
+.state.sel-present{background:var(--verde);border-color:var(--verde)}
+.state.sel-absent{background:var(--rojo);border-color:var(--rojo)}
+.state.sel-justified{background:var(--amarillo);border-color:var(--amarillo);color:#201c0a}
+.state.sel-late{background:var(--azul);border-color:var(--azul)}
+
+.notice{
+  padding:11px 13px;border-radius:10px;background:#092829;border-left:4px solid var(--verde);
+  color:#bdd0cd;margin-top:12px
+}
+.notice.err{border-left-color:var(--rojo);color:#ffcaca}
+.notice.ok{border-left-color:var(--verde2);color:#bdf8d5}
+
+.stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px
+}
+.stat{
+  background:#092c2d;border:1px solid var(--borde);border-radius:14px;padding:16px
+}
+.stat .n{font-size:28px;font-weight:950;color:var(--dorado)}
+.stat .t{font-size:12px;color:#acc1be;text-transform:uppercase;font-weight:800}
+
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;
+  padding:18px;z-index:100
+}
+.modal{
+  width:min(680px,100%);max-height:92vh;overflow:auto;
+  background:#073233;border:1px solid #256360;border-radius:18px;padding:20px;box-shadow:0 20px 70px rgba(0,0,0,.5)
+}
+.modal h3{margin-top:0}
+.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:15px;flex-wrap:wrap}
+.sep{height:1px;background:var(--borde);margin:18px 0}
+.empty{text-align:center;color:#9db2af;padding:30px 10px}
+.footer{color:#829c99;text-align:center;font-size:12px;padding:18px}
+
+@media(max-width:900px){
+  .col-2,.col-3,.col-4,.col-5,.col-6,.col-8{grid-column:span 12}
+  .topbar-inner{align-items:flex-start;flex-direction:column}
+}
+@media(max-width:600px){
+  .wrap{padding:12px}
+  .hero{padding:17px}
+  .hero h2{font-size:22px}
+  .states{grid-template-columns:repeat(2,1fr)}
+  .brand h1{font-size:16px}
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="shield logo-box"><img src="assets/logo-gimnasia.png" alt="Club Gimnasia y Esgrima"></div>
+      <div>
+        <h1>GIMNASIA COMODORO</h1>
+        <small>Control de asistencia · Formativas</small>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-view="asistencia" onclick="setView('asistencia')">ASISTENCIA</button>
+      <button class="tab" data-view="jugadores" onclick="setView('jugadores')">JUGADORES</button>
+      <button class="tab" data-view="resumen" onclick="setView('resumen')">RESUMEN</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <h2>Gestión de <span class="accent">asistencia por categoría</span></h2>
+      <p>Planteles, altas, modificaciones, bajas e historial de asistencia en un único sistema.</p>
+    </div>
+    <div class="badge" id="todayBadge"></div>
+  </section>
+
+  <!-- ASISTENCIA -->
+  <section id="view-asistencia">
+    <div class="card">
+      <div class="card-title">
+        <h3>1. Elegir categoría</h3>
+      </div>
+      <div id="catsAttendance" class="categories"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><h3>2. Datos de la práctica</h3></div>
+      <div class="grid">
+        <div class="col-4">
+          <label>Profesor</label>
+          <input id="attProfesor" placeholder="Nombre del profesor">
+        </div>
+        <div class="col-4">
+          <label>Fecha</label>
+          <input id="attFecha" type="date">
+        </div>
+        <div class="col-4" style="align-self:end">
+          <button class="btn btn-primary" style="width:100%" onclick="loadAttendancePlayers()">Cargar plantel</button>
+        </div>
+      </div>
+      <div id="attMsg"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <h3>3. Tomar asistencia</h3>
+        <div class="toolbar">
+          <button class="btn btn-sm btn-primary" onclick="markAll('PRESENTE')">Todos presentes</button>
+          <button class="btn btn-sm btn-danger" onclick="markAll('AUSENTE')">Todos ausentes</button>
+          <button class="btn btn-sm btn-secondary" onclick="clearMarks()">Limpiar</button>
+        </div>
+      </div>
+      <div class="statusbar">
+        <span class="badge">Plantel: <strong id="cTotal">0</strong></span>
+        <span class="badge">Presentes: <strong id="cPresent">0</strong></span>
+        <span class="badge">Ausentes: <strong id="cAbsent">0</strong></span>
+        <span class="badge">Justificados: <strong id="cJust">0</strong></span>
+        <span class="badge">Tarde: <strong id="cLate">0</strong></span>
+        <span class="badge">Sin marcar: <strong id="cNone">0</strong></span>
+      </div>
+      <div id="attPlayers" class="players-att">
+        <div class="empty">Seleccioná una categoría y cargá el plantel.</div>
+      </div>
+      <div class="sep"></div>
+      <button class="btn btn-gold" style="width:100%" onclick="saveAttendance()">GUARDAR ASISTENCIA</button>
+      <div id="saveMsg"></div>
+    </div>
+  </section>
+
+  <!-- JUGADORES -->
+  <section id="view-jugadores" class="hidden">
+    <div class="card">
+      <div class="card-title">
+        <h3>Gestión de jugadores</h3>
+        <button class="btn btn-primary" onclick="openPlayerModal()">+ Cargar chico</button>
+      </div>
+
+      <div id="catsPlayers" class="categories"></div>
+
+      <div class="grid" style="margin-top:14px">
+        <div class="col-6">
+          <label>Buscar</label>
+          <input id="playerSearch" placeholder="Nombre, apellido o dorsal" oninput="renderPlayerTable()">
+        </div>
+        <div class="col-3">
+          <label>Estado</label>
+          <select id="playerStatusFilter" onchange="loadPlayersAdmin()">
+            <option value="ACTIVOS">Activos</option>
+            <option value="TODOS">Todos</option>
+            <option value="BAJAS">Dados de baja</option>
+          </select>
+        </div>
+        <div class="col-3" style="align-self:end">
+          <button class="btn btn-secondary" style="width:100%" onclick="loadPlayersAdmin()">Actualizar</button>
+        </div>
+      </div>
+
+      <div class="statusbar">
+        <span class="badge">Categoría: <strong id="adminCategoryLabel">—</strong></span>
+        <span class="badge">Activos: <strong id="adminActiveCount">0</strong></span>
+        <span class="badge">Bajas: <strong id="adminInactiveCount">0</strong></span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Jugador</th>
+              <th>Nacimiento</th>
+              <th>Dorsal</th>
+              <th>Estado</th>
+              <th>Observaciones</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="playersTbody"></tbody>
+        </table>
+      </div>
+      <div id="playersMsg"></div>
+    </div>
+  </section>
+
+  <!-- RESUMEN -->
+  <section id="view-resumen" class="hidden">
+    <div class="card">
+      <div class="card-title"><h3>Resumen mensual</h3></div>
+      <div class="grid">
+        <div class="col-4">
+          <label>Categoría</label>
+          <select id="sumCategory"></select>
+        </div>
+        <div class="col-4">
+          <label>Mes</label>
+          <input id="sumMonth" type="month">
+        </div>
+        <div class="col-4" style="align-self:end">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-primary" style="width:100%" onclick="loadSummary()">Consultar</button>
+            <button class="btn btn-gold" style="width:100%" onclick="downloadMonthlyPDF()">Descargar PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="sPractices">0</div><div class="t">Prácticas registradas</div></div>
+      <div class="stat"><div class="n" id="sAvg">0%</div><div class="t">Asistencia promedio</div></div>
+      <div class="stat"><div class="n" id="sPlayers">0</div><div class="t">Jugadores</div></div>
+      <div class="stat"><div class="n" id="sRecords">0</div><div class="t">Registros</div></div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <div class="card-title"><h3>Asistencia individual</h3></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Jugador</th><th>Presente</th><th>Ausente</th><th>Justificado</th><th>Tarde</th><th>% Asistencia</th></tr>
+          </thead>
+          <tbody id="summaryTbody"></tbody>
+        </table>
+      </div>
+      <div id="summaryMsg"></div>
+    </div>
+  </section>
+
+  <div class="footer">Sistema interno · Gimnasia Comodoro</div>
+</main>
+
+<!-- MODAL JUGADOR -->
+<div id="playerModalBg" class="modal-bg hidden" onclick="modalBackdrop(event)">
+  <div class="modal">
+    <h3 id="playerModalTitle">Cargar chico</h3>
+    <input type="hidden" id="pId">
+    <div class="grid">
+      <div class="col-6">
+        <label>Nombre *</label>
+        <input id="pNombre">
+      </div>
+      <div class="col-6">
+        <label>Apellido *</label>
+        <input id="pApellido">
+      </div>
+      <div class="col-6">
+        <label>Categoría *</label>
+        <select id="pCategoria"></select>
+      </div>
+      <div class="col-3">
+        <label>Fecha nacimiento</label>
+        <input id="pNacimiento" type="date">
+      </div>
+      <div class="col-3">
+        <label>Dorsal</label>
+        <input id="pDorsal" inputmode="numeric" placeholder="Ej: 7">
+      </div>
+      <div class="col-12">
+        <label>Observaciones</label>
+        <textarea id="pObs" placeholder="Información interna opcional"></textarea>
+      </div>
+    </div>
+    <div id="modalMsg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closePlayerModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePlayer()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbxGk8XnuTOW5FCZbWZ4gKTyfEeMXCHIGFZxw0zNKo3WmI9lYq5z5mto2EkMHfj76Rh48g/exec";
+
+const CATEGORIES = [
+  "INICIACION",
+  "CEBOLLITAS",
+  "PREMINI",
+  "MINI (U11)",
+  "U13",
+  "U15",
+  "U17",
+  "U21/PRIMERA"
+];
+
+let selectedAttCategory = "";
+let selectedAdminCategory = "";
+let attPlayers = [];
+let adminPlayers = [];
+let editingPlayer = null;
+
+document.addEventListener("DOMContentLoaded",()=>{
+  initDates();
+  renderCategorySelectors();
+  fillSelects();
+});
+
+function initDates(){
+  const d=new Date();
+  const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  document.getElementById("attFecha").value=iso;
+  document.getElementById("sumMonth").value=iso.slice(0,7);
+  document.getElementById("todayBadge").textContent=d.toLocaleDateString("es-AR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+}
+
+function renderCategorySelectors(){
+  const a=document.getElementById("catsAttendance");
+  const p=document.getElementById("catsPlayers");
+  a.innerHTML=CATEGORIES.map(c=>`<button class="cat" onclick="selectAttCategory('${escAttr(c)}',this)">${esc(c)}</button>`).join("");
+  p.innerHTML=CATEGORIES.map(c=>`<button class="cat" onclick="selectAdminCategory('${escAttr(c)}',this)">${esc(c)}</button>`).join("");
+}
+
+function fillSelects(){
+  ["pCategoria","sumCategory"].forEach(id=>{
+    document.getElementById(id).innerHTML=CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
+  });
+}
+
+function setView(view){
+  ["asistencia","jugadores","resumen"].forEach(v=>{
+    document.getElementById("view-"+v).classList.toggle("hidden",v!==view);
+    document.querySelector(`.tab[data-view="${v}"]`).classList.toggle("active",v===view);
+  });
+}
+
+function selectAttCategory(cat,btn){
+  selectedAttCategory=cat;
+  document.querySelectorAll("#catsAttendance .cat").forEach(x=>x.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+function selectAdminCategory(cat,btn){
+  selectedAdminCategory=cat;
+  document.querySelectorAll("#catsPlayers .cat").forEach(x=>x.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById("adminCategoryLabel").textContent=cat;
+  loadPlayersAdmin();
+}
+
+function apiReady(){
+  return API_URL && !API_URL.includes("PEGAR_URL");
+}
+
+async function apiGet(params){
+  if(!apiReady()) throw new Error("Falta configurar la URL de Google Apps Script.");
+  const r=await fetch(API_URL+"?"+new URLSearchParams(params));
+  if(!r.ok) throw new Error("No se pudo conectar con Google Sheets.");
+  return await r.json();
+}
+async function apiPost(payload){
+  if(!apiReady()) throw new Error("Falta configurar la URL de Google Apps Script.");
+  const r=await fetch(API_URL,{
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify(payload)
+  });
+  if(!r.ok) throw new Error("No se pudo conectar con Google Sheets.");
+  return await r.json();
+}
+
+function showMsg(id,text,type=""){
+  document.getElementById(id).innerHTML=text?`<div class="notice ${type}">${esc(text)}</div>`:"";
+}
+
+/* ASISTENCIA */
+async function loadAttendancePlayers(){
+  const profesor=document.getElementById("attProfesor").value.trim();
+  const fecha=document.getElementById("attFecha").value;
+  if(!selectedAttCategory) return showMsg("attMsg","Seleccioná una categoría.","err");
+  if(!fecha) return showMsg("attMsg","Seleccioná una fecha.","err");
+  if(!profesor) showMsg("attMsg","Podés cargar el plantel, pero completá el profesor antes de guardar.","");
+  else showMsg("attMsg","Cargando plantel...","");
+
+  try{
+    const d=await apiGet({accion:"jugadores",categoria:selectedAttCategory,estado:"ACTIVOS"});
+    if(!d.ok) throw new Error(d.error||"No se pudo cargar el plantel.");
+    attPlayers=d.jugadores.map(j=>({...j,estado:""}));
+
+    const saved=await apiGet({accion:"asistenciaDia",categoria:selectedAttCategory,fecha});
+    if(saved.ok && Array.isArray(saved.registros)){
+      const map=new Map(saved.registros.map(r=>[String(r.jugadorId),r.estado]));
+      attPlayers.forEach(j=>j.estado=map.get(String(j.id))||"");
+    }
+    renderAttendance();
+    showMsg("attMsg",`${attPlayers.length} jugadores activos cargados.`,"ok");
+  }catch(e){showMsg("attMsg",e.message,"err")}
+}
+
+function renderAttendance(){
+  const box=document.getElementById("attPlayers");
+  if(!attPlayers.length){
+    box.innerHTML='<div class="empty">No hay jugadores activos en esta categoría.</div>';
+    updateCounters();return;
+  }
+  box.innerHTML=attPlayers.map((j,i)=>`
+    <div class="att-card">
+      <div class="att-name">${esc(j.apellido)}, ${esc(j.nombre)}</div>
+      <div class="att-meta">${j.dorsal?`Dorsal ${esc(String(j.dorsal))}`:"Sin dorsal"}</div>
+      <div class="states">
+        <button class="state ${j.estado==="PRESENTE"?"sel-present":""}" onclick="markOne(${i},'PRESENTE')">PRESENTE</button>
+        <button class="state ${j.estado==="AUSENTE"?"sel-absent":""}" onclick="markOne(${i},'AUSENTE')">AUSENTE</button>
+        <button class="state ${j.estado==="JUSTIFICADO"?"sel-justified":""}" onclick="markOne(${i},'JUSTIFICADO')">JUSTIFICADO</button>
+        <button class="state ${j.estado==="TARDE"?"sel-late":""}" onclick="markOne(${i},'TARDE')">TARDE</button>
+      </div>
+    </div>`).join("");
+  updateCounters();
+}
+function markOne(i,state){attPlayers[i].estado=state;renderAttendance()}
+function markAll(state){attPlayers.forEach(j=>j.estado=state);renderAttendance()}
+function clearMarks(){attPlayers.forEach(j=>j.estado="");renderAttendance()}
+function updateCounters(){
+  const c=s=>attPlayers.filter(x=>x.estado===s).length;
+  document.getElementById("cTotal").textContent=attPlayers.length;
+  document.getElementById("cPresent").textContent=c("PRESENTE");
+  document.getElementById("cAbsent").textContent=c("AUSENTE");
+  document.getElementById("cJust").textContent=c("JUSTIFICADO");
+  document.getElementById("cLate").textContent=c("TARDE");
+  document.getElementById("cNone").textContent=attPlayers.filter(x=>!x.estado).length;
+}
+async function saveAttendance(){
+  const profesor=document.getElementById("attProfesor").value.trim();
+  const fecha=document.getElementById("attFecha").value;
+  if(!selectedAttCategory) return showMsg("saveMsg","Seleccioná una categoría.","err");
+  if(!profesor) return showMsg("saveMsg","Ingresá el nombre del profesor.","err");
+  if(!fecha) return showMsg("saveMsg","Seleccioná una fecha.","err");
+  if(!attPlayers.length) return showMsg("saveMsg","Primero cargá el plantel.","err");
+  if(attPlayers.some(x=>!x.estado)) return showMsg("saveMsg","Hay jugadores sin marcar.","err");
+
+  try{
+    showMsg("saveMsg","Guardando asistencia...");
+    const d=await apiPost({
+      accion:"guardarAsistencia",
+      fecha,profesor,categoria:selectedAttCategory,
+      registros:attPlayers.map(x=>({jugadorId:x.id,nombre:x.nombre,apellido:x.apellido,estado:x.estado}))
+    });
+    if(!d.ok) throw new Error(d.error||"No se pudo guardar.");
+    showMsg("saveMsg","Asistencia guardada correctamente.","ok");
+  }catch(e){showMsg("saveMsg",e.message,"err")}
+}
+
+/* JUGADORES */
+async function loadPlayersAdmin(){
+  if(!selectedAdminCategory){
+    document.getElementById("playersTbody").innerHTML='<tr><td colspan="6" class="empty">Elegí una categoría.</td></tr>';
+    return;
+  }
+  const filter=document.getElementById("playerStatusFilter").value;
+  try{
+    showMsg("playersMsg","Cargando...");
+    const d=await apiGet({accion:"jugadores",categoria:selectedAdminCategory,estado:filter});
+    if(!d.ok) throw new Error(d.error||"No se pudo cargar.");
+    adminPlayers=d.jugadores;
+    document.getElementById("adminActiveCount").textContent=adminPlayers.filter(x=>x.activo===true||String(x.activo).toUpperCase()==="SI").length;
+    document.getElementById("adminInactiveCount").textContent=adminPlayers.filter(x=>!(x.activo===true||String(x.activo).toUpperCase()==="SI")).length;
+    renderPlayerTable();
+    showMsg("playersMsg","");
+  }catch(e){showMsg("playersMsg",e.message,"err")}
+}
+function renderPlayerTable(){
+  const q=document.getElementById("playerSearch").value.trim().toLowerCase();
+  const rows=adminPlayers.filter(p=>{
+    const txt=`${p.nombre} ${p.apellido} ${p.dorsal||""}`.toLowerCase();
+    return !q||txt.includes(q);
+  });
+  const tb=document.getElementById("playersTbody");
+  if(!rows.length){
+    tb.innerHTML='<tr><td colspan="6" class="empty">No hay jugadores para mostrar.</td></tr>';return;
+  }
+  tb.innerHTML=rows.map(p=>{
+    const active=p.activo===true||String(p.activo).toUpperCase()==="SI";
+    return `<tr class="${active?"":"inactive-row"}">
+      <td><strong>${esc(p.apellido)}, ${esc(p.nombre)}</strong></td>
+      <td>${esc(p.nacimiento||"—")}</td>
+      <td>${esc(String(p.dorsal||"—"))}</td>
+      <td>${active?'<span class="badge">ACTIVO</span>':'<span class="badge">BAJA</span>'}</td>
+      <td>${esc(p.observaciones||"—")}</td>
+      <td class="action-cell">
+        <button class="btn btn-sm btn-warning" onclick="editPlayer('${escAttr(String(p.id))}')">Modificar</button>
+        ${active
+          ? `<button class="btn btn-sm btn-danger" onclick="changePlayerStatus('${escAttr(String(p.id))}',false)">Dar de baja</button>`
+          : `<button class="btn btn-sm btn-primary" onclick="changePlayerStatus('${escAttr(String(p.id))}',true)">Reactivar</button>`}
+      </td>
+    </tr>`;
+  }).join("");
+}
+function openPlayerModal(){
+  editingPlayer=null;
+  document.getElementById("playerModalTitle").textContent="Cargar chico";
+  ["pId","pNombre","pApellido","pNacimiento","pDorsal","pObs"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("pCategoria").value=selectedAdminCategory||CATEGORIES[0];
+  showMsg("modalMsg","");
+  document.getElementById("playerModalBg").classList.remove("hidden");
+}
+function editPlayer(id){
+  const p=adminPlayers.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  editingPlayer=p;
+  document.getElementById("playerModalTitle").textContent="Modificar jugador";
+  document.getElementById("pId").value=p.id;
+  document.getElementById("pNombre").value=p.nombre||"";
+  document.getElementById("pApellido").value=p.apellido||"";
+  document.getElementById("pCategoria").value=p.categoria||selectedAdminCategory;
+  document.getElementById("pNacimiento").value=normalizeDateInput(p.nacimiento);
+  document.getElementById("pDorsal").value=p.dorsal||"";
+  document.getElementById("pObs").value=p.observaciones||"";
+  showMsg("modalMsg","");
+  document.getElementById("playerModalBg").classList.remove("hidden");
+}
+function closePlayerModal(){document.getElementById("playerModalBg").classList.add("hidden")}
+function modalBackdrop(e){if(e.target.id==="playerModalBg")closePlayerModal()}
+async function savePlayer(){
+  const payload={
+    accion:editingPlayer?"editarJugador":"crearJugador",
+    id:document.getElementById("pId").value,
+    nombre:document.getElementById("pNombre").value.trim(),
+    apellido:document.getElementById("pApellido").value.trim(),
+    categoria:document.getElementById("pCategoria").value,
+    nacimiento:document.getElementById("pNacimiento").value,
+    dorsal:document.getElementById("pDorsal").value.trim(),
+    observaciones:document.getElementById("pObs").value.trim()
+  };
+  if(!payload.nombre||!payload.apellido||!payload.categoria)
+    return showMsg("modalMsg","Nombre, apellido y categoría son obligatorios.","err");
+  try{
+    showMsg("modalMsg","Guardando...");
+    const d=await apiPost(payload);
+    if(!d.ok)throw new Error(d.error||"No se pudo guardar.");
+    closePlayerModal();
+    selectedAdminCategory=payload.categoria;
+    document.getElementById("adminCategoryLabel").textContent=selectedAdminCategory;
+    document.querySelectorAll("#catsPlayers .cat").forEach(btn=>{
+      btn.classList.toggle("active",btn.textContent.trim()===selectedAdminCategory);
+    });
+    await loadPlayersAdmin();
+    showMsg("playersMsg",editingPlayer?"Jugador modificado correctamente.":"Jugador cargado correctamente.","ok");
+  }catch(e){showMsg("modalMsg",e.message,"err")}
+}
+async function changePlayerStatus(id,activo){
+  const p=adminPlayers.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  const action=activo?"reactivar":"dar de baja";
+  if(!confirm(`¿Confirmás ${action} a ${p.nombre} ${p.apellido}?`))return;
+  try{
+    const d=await apiPost({accion:activo?"reactivarJugador":"bajaJugador",id});
+    if(!d.ok)throw new Error(d.error||"No se pudo actualizar.");
+    await loadPlayersAdmin();
+    showMsg("playersMsg",activo?"Jugador reactivado.":"Jugador dado de baja. Su historial se conserva.","ok");
+  }catch(e){showMsg("playersMsg",e.message,"err")}
+}
+
+/* RESUMEN */
+async function loadSummary(){
+  const categoria=document.getElementById("sumCategory").value;
+  const mes=document.getElementById("sumMonth").value;
+  if(!mes)return showMsg("summaryMsg","Seleccioná un mes.","err");
+  try{
+    showMsg("summaryMsg","Calculando...");
+    const d=await apiGet({accion:"resumenMes",categoria,mes});
+    if(!d.ok)throw new Error(d.error||"No se pudo consultar.");
+    document.getElementById("sPractices").textContent=d.practicas||0;
+    document.getElementById("sAvg").textContent=(d.promedioAsistencia||0)+"%";
+    document.getElementById("sPlayers").textContent=d.jugadores||0;
+    document.getElementById("sRecords").textContent=d.registros||0;
+    const tb=document.getElementById("summaryTbody");
+    tb.innerHTML=(d.detalle||[]).length?(d.detalle||[]).map(x=>`
+      <tr>
+        <td><strong>${esc(x.apellido)}, ${esc(x.nombre)}</strong></td>
+        <td>${x.presente}</td><td>${x.ausente}</td><td>${x.justificado}</td><td>${x.tarde}</td>
+        <td><strong>${x.porcentaje}%</strong></td>
+      </tr>`).join(""):'<tr><td colspan="6" class="empty">Sin registros para este mes.</td></tr>';
+    showMsg("summaryMsg","","");
+  }catch(e){showMsg("summaryMsg",e.message,"err")}
+}
+
+
+/* PDF MENSUAL */
+async function downloadMonthlyPDF(){
+  const mes=document.getElementById("sumMonth").value;
+  if(!mes) return showMsg("summaryMsg","Seleccioná un mes.","err");
+
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    return showMsg("summaryMsg","No se pudo cargar el generador de PDF. Verificá la conexión a internet.","err");
+  }
+
+  try{
+    showMsg("summaryMsg","Generando PDF mensual...");
+    const resultados=[];
+
+    for(const categoria of CATEGORIES){
+      const d=await apiGet({accion:"resumenMes",categoria,mes});
+      if(d.ok){
+        resultados.push({categoria,...d});
+      }
+    }
+
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+    const [anio,numeroMes]=mes.split("-");
+    const nombreMes=new Date(Number(anio),Number(numeroMes)-1,1)
+      .toLocaleDateString("es-AR",{month:"long",year:"numeric"});
+
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(16);
+    doc.text("CLUB GIMNASIA & ESGRIMA - COMODORO RIVADAVIA",14,16);
+    doc.setFontSize(14);
+    doc.text("Informe mensual de asistencia",14,24);
+
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(10);
+    doc.text("Período: "+nombreMes,14,31);
+    doc.text("Generado: "+new Date().toLocaleString("es-AR"),14,37);
+
+    let y=46;
+
+    resultados.forEach((r,index)=>{
+      if(index>0 && y>245){
+        doc.addPage();
+        y=18;
+      }
+
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(13);
+      doc.text(r.categoria,14,y);
+      y+=6;
+
+      doc.setFont("helvetica","normal");
+      doc.setFontSize(9);
+      doc.text(
+        `Prácticas: ${r.practicas||0}   |   Jugadores con registros: ${r.jugadores||0}   |   Asistencia promedio: ${r.promedioAsistencia||0}%`,
+        14,y
+      );
+      y+=5;
+
+      const rows=(r.detalle||[]).map(x=>[
+        `${x.apellido}, ${x.nombre}`,
+        x.presente,
+        x.ausente,
+        x.justificado,
+        x.tarde,
+        `${x.porcentaje}%`
+      ]);
+
+      if(rows.length){
+        doc.autoTable({
+          startY:y,
+          head:[["Jugador","Presente","Ausente","Justif.","Tarde","% asistencia"]],
+          body:rows,
+          theme:"grid",
+          styles:{fontSize:8,cellPadding:2},
+          headStyles:{fillColor:[7,50,51],textColor:255},
+          columnStyles:{
+            0:{cellWidth:70},
+            1:{halign:"center"},
+            2:{halign:"center"},
+            3:{halign:"center"},
+            4:{halign:"center"},
+            5:{halign:"center"}
+          },
+          margin:{left:14,right:14}
+        });
+        y=doc.lastAutoTable.finalY+10;
+      }else{
+        doc.setFontSize(9);
+        doc.text("Sin registros para esta categoría en el período seleccionado.",14,y+2);
+        y+=10;
+      }
+    });
+
+    // Resumen general al final
+    if(y>245){ doc.addPage(); y=18; }
+    doc.setFont("helvetica","bold");
+    doc.setFontSize(13);
+    doc.text("Resumen por categoría",14,y);
+    y+=5;
+
+    const generalRows=resultados.map(r=>[
+      r.categoria,
+      r.practicas||0,
+      r.jugadores||0,
+      r.registros||0,
+      `${r.promedioAsistencia||0}%`
+    ]);
+
+    doc.autoTable({
+      startY:y,
+      head:[["Categoría","Prácticas","Jugadores","Registros","% presentes"]],
+      body:generalRows,
+      theme:"grid",
+      styles:{fontSize:8,cellPadding:2},
+      headStyles:{fillColor:[7,50,51],textColor:255},
+      margin:{left:14,right:14}
+    });
+
+    const safeMes=mes.replace("-","_");
+    doc.save(`Asistencia_Gimnasia_${safeMes}.pdf`);
+    showMsg("summaryMsg","PDF generado correctamente.","ok");
+  }catch(e){
+    showMsg("summaryMsg",e.message||"No se pudo generar el PDF.","err");
+  }
+}
+
+/* helpers */
+function normalizeDateInput(v){
+  if(!v)return "";
+  const s=String(v);
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m)return `${m[1]}-${m[2]}-${m[3]}`;
+  return "";
+}
+function esc(v){
+  return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+}
+function escAttr(v){return esc(v).replace(/`/g,"&#096;")}
+</script>
+</body>
+</html>

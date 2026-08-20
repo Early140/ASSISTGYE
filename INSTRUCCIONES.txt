@@ -1,0 +1,50 @@
+ASISTENCIA GIMNASIA V3 - CORRECCIONES
+
+CAMBIOS
+- Corrige fechas dd/MM/yyyy y yyyy-MM-dd.
+- El resumen mensual vuelve a reconocer registros existentes.
+- Evita duplicados por misma fecha + categoría.
+- Si se vuelve a guardar una asistencia del mismo día/categoría, reemplaza la anterior.
+- Mantiene historial de jugadores dados de baja.
+- Agrega botón "Descargar PDF" en RESUMEN.
+- El PDF incluye TODAS las categorías, separadas por sección.
+- Incluye presentes, ausentes, justificados, tarde y % de asistencia.
+- Incluye resumen general por categoría.
+- Incluye logo institucional en el encabezado del HTML.
+
+ACTUALIZAR APPS SCRIPT
+
+1. Abrir Apps Script.
+2. Reemplazar TODO el contenido de Código.gs por el nuevo Code.gs.
+3. En la primera línea reemplazar:
+   PEGAR_ID_DE_TU_GOOGLE_SHEET_AQUI
+   por el mismo ID que ya venías usando.
+4. Guardar.
+
+MUY IMPORTANTE: ACTUALIZAR IMPLEMENTACIÓN
+
+5. Ir a Implementar > Administrar implementaciones.
+6. En tu implementación de Aplicación web, tocar Editar (lápiz).
+7. En "Versión", elegir NUEVA VERSIÓN.
+8. Implementar.
+9. La URL /exec debería seguir siendo la misma.
+
+ACTUALIZAR HTML
+
+10. Abrir el nuevo index.html.
+11. Buscar:
+    const API_URL = "PEGAR_URL_APPS_SCRIPT_AQUI";
+12. Pegar tu misma URL /exec.
+13. Guardar.
+14. Si lo tenés en Vercel, volver a subir:
+    - index.html
+    - carpeta assets
+
+PRUEBA
+
+- Cargar una asistencia de MINI (U11).
+- Ir a RESUMEN.
+- Elegir agosto 2026.
+- Consultar.
+- El registro debe aparecer.
+- Pulsar Descargar PDF.

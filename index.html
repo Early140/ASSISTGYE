@@ -269,7 +269,7 @@ tr:hover td{background:#0a3636}
         <div class="toolbar">
           <button class="btn btn-sm btn-primary" onclick="markAll('PRESENTE')">Todos presentes</button>
           <button class="btn btn-sm btn-danger" onclick="markAll('AUSENTE')">Todos ausentes</button>
-          <button class="btn btn-sm btn-secondary" onclick="clearMarks()">Limpiar</button>
+          <button class="btn btn-sm btn-secondary" onclick="clearMarks()">Restablecer ausentes</button>
         </div>
       </div>
       <div class="statusbar">
@@ -284,7 +284,7 @@ tr:hover td{background:#0a3636}
         <div class="empty">Seleccioná una categoría y cargá el plantel.</div>
       </div>
       <div class="sep"></div>
-      <button class="btn btn-gold" style="width:100%" onclick="saveAttendance()">GUARDAR ASISTENCIA</button>
+      <button class="btn btn-gold" style="width:100%" onclick="saveAttendance(false)">GUARDAR AHORA</button>
       <div id="saveMsg"></div>
     </div>
   </section>
@@ -545,24 +545,45 @@ function showMsg(id,text,type=""){
 async function loadAttendancePlayers(){
   const profesor=document.getElementById("attProfesor").value;
   const fecha=document.getElementById("attFecha").value;
+
   if(!selectedAttCategory) return showMsg("attMsg","Seleccioná una categoría.","err");
   if(!fecha) return showMsg("attMsg","Seleccioná una fecha.","err");
-  if(!profesor) showMsg("attMsg","Podés cargar el plantel, pero completá el profesor antes de guardar.","");
-  else showMsg("attMsg","Cargando plantel...","");
+  if(!profesor) return showMsg("attMsg","Seleccioná un profesor antes de cargar el plantel.","err");
+
+  showMsg("attMsg","Cargando plantel...","");
 
   try{
     const d=await apiGet({accion:"jugadores",categoria:selectedAttCategory,estado:"ACTIVOS"});
     if(!d.ok) throw new Error(d.error||"No se pudo cargar el plantel.");
-    attPlayers=d.jugadores.map(j=>({...j,estado:""}));
 
+    // Por defecto todos quedan AUSENTES.
+    // Así solo hace falta marcar a quienes vinieron, llegaron tarde o están justificados.
+    attPlayers=d.jugadores.map(j=>({...j,estado:"AUSENTE"}));
+
+    // Si ya existe asistencia para esa fecha/categoría, recuperamos lo guardado.
     const saved=await apiGet({accion:"asistenciaDia",categoria:selectedAttCategory,fecha});
-    if(saved.ok && Array.isArray(saved.registros)){
-      const map=new Map(saved.registros.map(r=>[String(r.jugadorId),r.estado]));
-      attPlayers.forEach(j=>j.estado=map.get(String(j.id))||"");
+    const tieneGuardados = saved.ok && Array.isArray(saved.registros) && saved.registros.length>0;
+
+    if(tieneGuardados){
+      const map=new Map(saved.registros.map(r=>[String(r.jugadorId),String(r.estado||"AUSENTE").toUpperCase()]));
+      attPlayers.forEach(j=>{
+        if(map.has(String(j.id))) j.estado=map.get(String(j.id))||"AUSENTE";
+      });
     }
+
     renderAttendance();
-    showMsg("attMsg",`${attPlayers.length} jugadores activos cargados.`,"ok");
-  }catch(e){showMsg("attMsg",e.message,"err")}
+
+    // Si es una clase nueva, se crea automáticamente con todos AUSENTES.
+    // Después cada cambio de estado vuelve a guardar el registro completo.
+    if(!tieneGuardados && attPlayers.length){
+      await saveAttendance(true);
+      showMsg("attMsg",`${attPlayers.length} jugadores cargados. Se creó la asistencia del día automáticamente; marcá solo los cambios.`,"ok");
+    }else{
+      showMsg("attMsg",`${attPlayers.length} jugadores cargados. Esta asistencia ya existía y podés modificarla.`,"ok");
+    }
+  }catch(e){
+    showMsg("attMsg",e.message,"err");
+  }
 }
 
 function renderAttendance(){
@@ -584,9 +605,23 @@ function renderAttendance(){
     </div>`).join("");
   updateCounters();
 }
-function markOne(i,state){attPlayers[i].estado=state;renderAttendance()}
-function markAll(state){attPlayers.forEach(j=>j.estado=state);renderAttendance()}
-function clearMarks(){attPlayers.forEach(j=>j.estado="");renderAttendance()}
+async function markOne(i,state){
+  attPlayers[i].estado=state;
+  renderAttendance();
+  await saveAttendance(true);
+}
+
+async function markAll(state){
+  attPlayers.forEach(j=>j.estado=state);
+  renderAttendance();
+  await saveAttendance(true);
+}
+
+async function clearMarks(){
+  attPlayers.forEach(j=>j.estado="AUSENTE");
+  renderAttendance();
+  await saveAttendance(true);
+}
 function updateCounters(){
   const c=s=>attPlayers.filter(x=>x.estado===s).length;
   document.getElementById("cTotal").textContent=attPlayers.length;
@@ -596,25 +631,60 @@ function updateCounters(){
   document.getElementById("cLate").textContent=c("TARDE");
   document.getElementById("cNone").textContent=attPlayers.filter(x=>!x.estado).length;
 }
-async function saveAttendance(){
+async function saveAttendance(silent=false){
   const profesor=document.getElementById("attProfesor").value;
   const fecha=document.getElementById("attFecha").value;
-  if(!selectedAttCategory) return showMsg("saveMsg","Seleccioná una categoría.","err");
-  if(!profesor) return showMsg("saveMsg","Ingresá el nombre del profesor.","err");
-  if(!fecha) return showMsg("saveMsg","Seleccioná una fecha.","err");
-  if(!attPlayers.length) return showMsg("saveMsg","Primero cargá el plantel.","err");
-  if(attPlayers.some(x=>!x.estado)) return showMsg("saveMsg","Hay jugadores sin marcar.","err");
+
+  if(!selectedAttCategory){
+    if(!silent) showMsg("saveMsg","Seleccioná una categoría.","err");
+    return false;
+  }
+  if(!profesor){
+    if(!silent) showMsg("saveMsg","Seleccioná un profesor.","err");
+    return false;
+  }
+  if(!fecha){
+    if(!silent) showMsg("saveMsg","Seleccioná una fecha.","err");
+    return false;
+  }
+  if(!attPlayers.length){
+    if(!silent) showMsg("saveMsg","Primero cargá el plantel.","err");
+    return false;
+  }
+
+  // Seguridad: cualquier jugador sin estado se toma como AUSENTE.
+  attPlayers.forEach(x=>{
+    if(!x.estado) x.estado="AUSENTE";
+  });
 
   try{
-    showMsg("saveMsg","Guardando asistencia...");
+    if(!silent) showMsg("saveMsg","Guardando asistencia...");
+
     const d=await apiPost({
       accion:"guardarAsistencia",
-      fecha,profesor,categoria:selectedAttCategory,
-      registros:attPlayers.map(x=>({jugadorId:x.id,nombre:x.nombre,apellido:x.apellido,estado:x.estado}))
+      fecha,
+      profesor,
+      categoria:selectedAttCategory,
+      registros:attPlayers.map(x=>({
+        jugadorId:x.id,
+        nombre:x.nombre,
+        apellido:x.apellido,
+        estado:x.estado||"AUSENTE"
+      }))
     });
+
     if(!d.ok) throw new Error(d.error||"No se pudo guardar.");
-    showMsg("saveMsg","Asistencia guardada correctamente.","ok");
-  }catch(e){showMsg("saveMsg",e.message,"err")}
+
+    if(silent){
+      showMsg("saveMsg","Cambios guardados automáticamente.","ok");
+    }else{
+      showMsg("saveMsg","Asistencia guardada correctamente.","ok");
+    }
+    return true;
+  }catch(e){
+    showMsg("saveMsg",e.message,"err");
+    return false;
+  }
 }
 
 /* JUGADORES */

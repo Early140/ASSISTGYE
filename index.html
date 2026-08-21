@@ -248,7 +248,9 @@ tr:hover td{background:#0a3636}
       <div class="grid">
         <div class="col-4">
           <label>Profesor</label>
-          <input id="attProfesor" placeholder="Nombre del profesor">
+          <select id="attProfesor">
+            <option value="">Seleccionar profesor</option>
+          </select>
         </div>
         <div class="col-4">
           <label>Fecha</label>
@@ -432,11 +434,25 @@ const CATEGORIES = [
   "INICIACION",
   "CEBOLLITAS",
   "PREMINI",
-  "MINI (U11)",
-  "U13",
-  "U15",
-  "U17",
+  "MINI (U11) FEMENINO",
+  "MINI (U11) MASCULINO",
+  "U13 FEMENINO",
+  "U13 MASCULINO",
+  "U15 FEMENINO",
+  "U15 MASCULINO",
+  "U17 FEMENINO",
+  "U17 MASCULINO",
   "U21/PRIMERA"
+];
+
+const COACHES = [
+  "LUCAS/EVE",
+  "TAMARA",
+  "LAURA",
+  "BAUTISTA",
+  "FRAN/SEBA",
+  "IVAN",
+  "MATI/JULI"
 ];
 
 let selectedAttCategory = "";
@@ -449,6 +465,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   initDates();
   renderCategorySelectors();
   fillSelects();
+  fillCoachSelect();
 });
 
 function initDates(){
@@ -470,6 +487,12 @@ function fillSelects(){
   ["pCategoria","sumCategory"].forEach(id=>{
     document.getElementById(id).innerHTML=CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
   });
+}
+
+function fillCoachSelect(){
+  const sel=document.getElementById("attProfesor");
+  sel.innerHTML='<option value="">Seleccionar profesor</option>'+
+    COACHES.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join("");
 }
 
 function setView(view){
@@ -520,7 +543,7 @@ function showMsg(id,text,type=""){
 
 /* ASISTENCIA */
 async function loadAttendancePlayers(){
-  const profesor=document.getElementById("attProfesor").value.trim();
+  const profesor=document.getElementById("attProfesor").value;
   const fecha=document.getElementById("attFecha").value;
   if(!selectedAttCategory) return showMsg("attMsg","Seleccioná una categoría.","err");
   if(!fecha) return showMsg("attMsg","Seleccioná una fecha.","err");
@@ -574,7 +597,7 @@ function updateCounters(){
   document.getElementById("cNone").textContent=attPlayers.filter(x=>!x.estado).length;
 }
 async function saveAttendance(){
-  const profesor=document.getElementById("attProfesor").value.trim();
+  const profesor=document.getElementById("attProfesor").value;
   const fecha=document.getElementById("attFecha").value;
   if(!selectedAttCategory) return showMsg("saveMsg","Seleccioná una categoría.","err");
   if(!profesor) return showMsg("saveMsg","Ingresá el nombre del profesor.","err");

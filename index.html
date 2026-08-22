@@ -272,6 +272,13 @@ tr:hover td{background:#0a3636}
           <button class="btn btn-sm btn-secondary" onclick="clearMarks()">Restablecer ausentes</button>
         </div>
       </div>
+      <div class="grid" style="margin-bottom:14px">
+        <div class="col-6">
+          <label>Buscar jugador</label>
+          <input id="attSearch" placeholder="Escribí nombre, apellido o dorsal" oninput="renderAttendance()">
+        </div>
+      </div>
+
       <div class="statusbar">
         <span class="badge">Plantel: <strong id="cTotal">0</strong></span>
         <span class="badge">Presentes: <strong id="cPresent">0</strong></span>
@@ -579,6 +586,8 @@ async function loadAttendancePlayers(){
   if(!profesor) return showMsg("attMsg","Seleccioná un profesor antes de cargar el plantel.","err");
 
   showMsg("attMsg","Cargando plantel...","");
+  const attSearch=document.getElementById("attSearch");
+  if(attSearch) attSearch.value="";
 
   try{
     let jugadores=[];
@@ -637,11 +646,29 @@ async function loadAttendancePlayers(){
 }
 function renderAttendance(){
   const box=document.getElementById("attPlayers");
+  const searchInput=document.getElementById("attSearch");
+  const q=(searchInput ? searchInput.value : "").trim().toLowerCase();
+
+  const visibles=attPlayers
+    .map((j,i)=>({j,i}))
+    .filter(({j})=>{
+      const txt=`${j.nombre||""} ${j.apellido||""} ${j.dorsal||""}`.toLowerCase();
+      return !q || txt.includes(q);
+    });
+
   if(!attPlayers.length){
     box.innerHTML='<div class="empty">No hay jugadores activos en esta categoría.</div>';
-    updateCounters();return;
+    updateCounters();
+    return;
   }
-  box.innerHTML=attPlayers.map((j,i)=>`
+
+  if(!visibles.length){
+    box.innerHTML='<div class="empty">No se encontraron jugadores con esa búsqueda.</div>';
+    updateCounters();
+    return;
+  }
+
+  box.innerHTML=visibles.map(({j,i})=>`
     <div class="att-card">
       <div class="att-name">${esc(j.apellido)}, ${esc(j.nombre)}</div>
       <div class="att-meta">
@@ -655,6 +682,7 @@ function renderAttendance(){
         <button class="state ${j.estado==="TARDE"?"sel-late":""}" onclick="markOne(${i},'TARDE')">TARDE</button>
       </div>
     </div>`).join("");
+
   updateCounters();
 }
 async function markOne(i,state){

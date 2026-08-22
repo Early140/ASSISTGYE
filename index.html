@@ -430,7 +430,7 @@ tr:hover td{background:#0a3636}
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbxGk8XnuTOW5FCZbWZ4gKTyfEeMXCHIGFZxw0zNKo3WmI9lYq5z5mto2EkMHfj76Rh48g/exec";
 
-const CATEGORIES = [
+const PLAYER_CATEGORIES = [
   "INICIACION",
   "CEBOLLITAS",
   "PREMINI",
@@ -445,6 +445,31 @@ const CATEGORIES = [
   "U21/PRIMERA"
 ];
 
+const SPECIAL_CATEGORIES = {
+  "FUNDAMENTOS": [...PLAYER_CATEGORIES],
+  "FISICO FEMENINO": [
+    "MINI (U11) FEMENINO",
+    "U13 FEMENINO",
+    "U15 FEMENINO",
+    "U17 FEMENINO"
+  ],
+  "FISICO MASCULINO": [
+    "MINI (U11) MASCULINO",
+    "U13 MASCULINO",
+    "U15 MASCULINO",
+    "U17 MASCULINO"
+  ]
+};
+
+const ATTENDANCE_CATEGORIES = [
+  ...PLAYER_CATEGORIES,
+  "FUNDAMENTOS",
+  "FISICO FEMENINO",
+  "FISICO MASCULINO"
+];
+
+const REPORT_CATEGORIES = ATTENDANCE_CATEGORIES;
+
 const COACHES = [
   "LUCAS/EVE",
   "TAMARA",
@@ -452,7 +477,9 @@ const COACHES = [
   "BAUTISTA",
   "FRAN/SEBA",
   "IVAN",
-  "MATI/JULI"
+  "MATI/JULI",
+  "CHIARA",
+  "GONZALO"
 ];
 
 let selectedAttCategory = "";
@@ -479,14 +506,15 @@ function initDates(){
 function renderCategorySelectors(){
   const a=document.getElementById("catsAttendance");
   const p=document.getElementById("catsPlayers");
-  a.innerHTML=CATEGORIES.map(c=>`<button class="cat" onclick="selectAttCategory('${escAttr(c)}',this)">${esc(c)}</button>`).join("");
-  p.innerHTML=CATEGORIES.map(c=>`<button class="cat" onclick="selectAdminCategory('${escAttr(c)}',this)">${esc(c)}</button>`).join("");
+  a.innerHTML=ATTENDANCE_CATEGORIES.map(c=>`<button class="cat" onclick="selectAttCategory('${escAttr(c)}',this)">${esc(c)}</button>`).join("");
+  p.innerHTML=PLAYER_CATEGORIES.map(c=>`<button class="cat" onclick="selectAdminCategory('${escAttr(c)}',this)">${esc(c)}</button>`).join("");
 }
 
 function fillSelects(){
-  ["pCategoria","sumCategory"].forEach(id=>{
-    document.getElementById(id).innerHTML=CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
-  });
+  document.getElementById("pCategoria").innerHTML=
+    PLAYER_CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
+  document.getElementById("sumCategory").innerHTML=
+    REPORT_CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
 }
 
 function fillCoachSelect(){
@@ -553,16 +581,38 @@ async function loadAttendancePlayers(){
   showMsg("attMsg","Cargando plantel...","");
 
   try{
-    const d=await apiGet({accion:"jugadores",categoria:selectedAttCategory,estado:"ACTIVOS"});
-    if(!d.ok) throw new Error(d.error||"No se pudo cargar el plantel.");
+    let jugadores=[];
 
-    // Por defecto todos quedan AUSENTES.
-    // Así solo hace falta marcar a quienes vinieron, llegaron tarde o están justificados.
-    attPlayers=d.jugadores.map(j=>({...j,estado:"AUSENTE"}));
+    if(SPECIAL_CATEGORIES[selectedAttCategory]){
+      const categoriasOrigen=SPECIAL_CATEGORIES[selectedAttCategory];
+      const respuestas=await Promise.all(
+        categoriasOrigen.map(c=>apiGet({accion:"jugadores",categoria:c,estado:"ACTIVOS"}).then(data=>({categoria:c,data})))
+      );
 
-    // Si ya existe asistencia para esa fecha/categoría, recuperamos lo guardado.
+      const vistos=new Set();
+
+      respuestas.forEach(({categoria,data})=>{
+        if(!data.ok) return;
+        (data.jugadores||[]).forEach(j=>{
+          const key=String(j.id);
+          if(!vistos.has(key)){
+            vistos.add(key);
+            jugadores.push({...j,categoriaOrigen:categoria});
+          }
+        });
+      });
+
+      jugadores.sort((a,b)=>(`${a.apellido} ${a.nombre}`).localeCompare(`${b.apellido} ${b.nombre}`,"es"));
+    }else{
+      const d=await apiGet({accion:"jugadores",categoria:selectedAttCategory,estado:"ACTIVOS"});
+      if(!d.ok) throw new Error(d.error||"No se pudo cargar el plantel.");
+      jugadores=(d.jugadores||[]).map(j=>({...j,categoriaOrigen:selectedAttCategory}));
+    }
+
+    attPlayers=jugadores.map(j=>({...j,estado:"AUSENTE"}));
+
     const saved=await apiGet({accion:"asistenciaDia",categoria:selectedAttCategory,fecha});
-    const tieneGuardados = saved.ok && Array.isArray(saved.registros) && saved.registros.length>0;
+    const tieneGuardados=saved.ok && Array.isArray(saved.registros) && saved.registros.length>0;
 
     if(tieneGuardados){
       const map=new Map(saved.registros.map(r=>[String(r.jugadorId),String(r.estado||"AUSENTE").toUpperCase()]));
@@ -573,19 +623,18 @@ async function loadAttendancePlayers(){
 
     renderAttendance();
 
-    // Si es una clase nueva, se crea automáticamente con todos AUSENTES.
-    // Después cada cambio de estado vuelve a guardar el registro completo.
     if(!tieneGuardados && attPlayers.length){
       await saveAttendance(true);
-      showMsg("attMsg",`${attPlayers.length} jugadores cargados. Se creó la asistencia del día automáticamente; marcá solo los cambios.`,"ok");
-    }else{
+      showMsg("attMsg",`Asistencia creada automáticamente con ${attPlayers.length} jugadores. Marcá solo los cambios.`,"ok");
+    }else if(tieneGuardados){
       showMsg("attMsg",`${attPlayers.length} jugadores cargados. Esta asistencia ya existía y podés modificarla.`,"ok");
+    }else{
+      showMsg("attMsg","No hay jugadores activos para esta categoría.","");
     }
   }catch(e){
     showMsg("attMsg",e.message,"err");
   }
 }
-
 function renderAttendance(){
   const box=document.getElementById("attPlayers");
   if(!attPlayers.length){
@@ -595,7 +644,10 @@ function renderAttendance(){
   box.innerHTML=attPlayers.map((j,i)=>`
     <div class="att-card">
       <div class="att-name">${esc(j.apellido)}, ${esc(j.nombre)}</div>
-      <div class="att-meta">${j.dorsal?`Dorsal ${esc(String(j.dorsal))}`:"Sin dorsal"}</div>
+      <div class="att-meta">
+        ${j.dorsal?`Dorsal ${esc(String(j.dorsal))}`:"Sin dorsal"}
+        ${SPECIAL_CATEGORIES[selectedAttCategory] && j.categoriaOrigen ? ` · ${esc(j.categoriaOrigen)}` : ""}
+      </div>
       <div class="states">
         <button class="state ${j.estado==="PRESENTE"?"sel-present":""}" onclick="markOne(${i},'PRESENTE')">PRESENTE</button>
         <button class="state ${j.estado==="AUSENTE"?"sel-absent":""}" onclick="markOne(${i},'AUSENTE')">AUSENTE</button>
@@ -736,7 +788,7 @@ function openPlayerModal(){
   editingPlayer=null;
   document.getElementById("playerModalTitle").textContent="Cargar chico";
   ["pId","pNombre","pApellido","pNacimiento","pDorsal","pObs"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("pCategoria").value=selectedAdminCategory||CATEGORIES[0];
+  document.getElementById("pCategoria").value=selectedAdminCategory||PLAYER_CATEGORIES[0];
   showMsg("modalMsg","");
   document.getElementById("playerModalBg").classList.remove("hidden");
 }
@@ -835,7 +887,7 @@ async function downloadMonthlyPDF(){
     showMsg("summaryMsg","Generando PDF mensual...");
     const resultados=[];
 
-    for(const categoria of CATEGORIES){
+    for(const categoria of REPORT_CATEGORIES){
       const d=await apiGet({accion:"resumenMes",categoria,mes});
       if(d.ok){
         resultados.push({categoria,...d});

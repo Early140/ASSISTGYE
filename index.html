@@ -229,7 +229,7 @@ tr:hover td{background:#0a3636}
   <section class="hero">
     <div>
       <h2>Gestión de <span class="accent">asistencia por categoría</span></h2>
-      <p>Planteles, altas, modificaciones, bajas e historial de asistencia en un único sistema.</p>
+      <p>Planteles, doble categoría por jugador, grupos especiales sin duplicados e historial de asistencia.</p>
     </div>
     <div class="badge" id="todayBadge"></div>
   </section>
@@ -410,8 +410,12 @@ tr:hover td{background:#0a3636}
         <input id="pApellido">
       </div>
       <div class="col-6">
-        <label>Categoría *</label>
+        <label>Categoría principal *</label>
         <select id="pCategoria"></select>
+      </div>
+      <div class="col-6">
+        <label>Segunda categoría (opcional)</label>
+        <select id="pCategoria2"></select>
       </div>
       <div class="col-3">
         <label>Fecha nacimiento</label>
@@ -424,6 +428,11 @@ tr:hover td{background:#0a3636}
       <div class="col-12">
         <label>Observaciones</label>
         <textarea id="pObs" placeholder="Información interna opcional"></textarea>
+      </div>
+      <div class="col-12">
+        <div class="notice">
+          Si elegís una segunda categoría, el jugador pertenecerá a ambas. En FUNDAMENTOS y FISICO aparecerá una sola vez.
+        </div>
       </div>
     </div>
     <div id="modalMsg"></div>
@@ -520,6 +529,11 @@ function renderCategorySelectors(){
 function fillSelects(){
   document.getElementById("pCategoria").innerHTML=
     PLAYER_CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
+
+  document.getElementById("pCategoria2").innerHTML=
+    '<option value="">Sin segunda categoría</option>'+
+    PLAYER_CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
+
   document.getElementById("sumCategory").innerHTML=
     REPORT_CATEGORIES.map(c=>`<option>${esc(c)}</option>`).join("");
 }
@@ -576,6 +590,23 @@ function showMsg(id,text,type=""){
   document.getElementById(id).innerHTML=text?`<div class="notice ${type}">${esc(text)}</div>`:"";
 }
 
+function playerIdentityKey(j){
+  const normalize=s=>String(s||"")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/\s+/g," ");
+
+  const nombre=normalize(j.nombre);
+  const apellido=normalize(j.apellido);
+  const nacimiento=normalize(j.nacimiento);
+
+  return nacimiento
+    ? `${apellido}|${nombre}|${nacimiento}`
+    : `${apellido}|${nombre}`;
+}
+
 /* ASISTENCIA */
 async function loadAttendancePlayers(){
   const profesor=document.getElementById("attProfesor").value;
@@ -598,18 +629,33 @@ async function loadAttendancePlayers(){
         categoriasOrigen.map(c=>apiGet({accion:"jugadores",categoria:c,estado:"ACTIVOS"}).then(data=>({categoria:c,data})))
       );
 
-      const vistos=new Set();
+      const jugadoresUnicos=new Map();
 
       respuestas.forEach(({categoria,data})=>{
         if(!data.ok) return;
+
         (data.jugadores||[]).forEach(j=>{
-          const key=String(j.id);
-          if(!vistos.has(key)){
-            vistos.add(key);
-            jugadores.push({...j,categoriaOrigen:categoria});
+          const key=playerIdentityKey(j);
+
+          if(!jugadoresUnicos.has(key)){
+            jugadoresUnicos.set(key,{
+              ...j,
+              categoriaOrigen:categoria,
+              categoriasOrigen:[categoria]
+            });
+          }else{
+            const existente=jugadoresUnicos.get(key);
+
+            if(!existente.categoriasOrigen.includes(categoria)){
+              existente.categoriasOrigen.push(categoria);
+            }
+
+            existente.categoriaOrigen=existente.categoriasOrigen.join(" / ");
           }
         });
       });
+
+      jugadores=[...jugadoresUnicos.values()];
 
       jugadores.sort((a,b)=>(`${a.apellido} ${a.nombre}`).localeCompare(`${b.apellido} ${b.nombre}`,"es"));
     }else{
@@ -817,6 +863,7 @@ function openPlayerModal(){
   document.getElementById("playerModalTitle").textContent="Cargar chico";
   ["pId","pNombre","pApellido","pNacimiento","pDorsal","pObs"].forEach(id=>document.getElementById(id).value="");
   document.getElementById("pCategoria").value=selectedAdminCategory||PLAYER_CATEGORIES[0];
+  document.getElementById("pCategoria2").value="";
   showMsg("modalMsg","");
   document.getElementById("playerModalBg").classList.remove("hidden");
 }
@@ -829,6 +876,7 @@ function editPlayer(id){
   document.getElementById("pNombre").value=p.nombre||"";
   document.getElementById("pApellido").value=p.apellido||"";
   document.getElementById("pCategoria").value=p.categoria||selectedAdminCategory;
+  document.getElementById("pCategoria2").value="";
   document.getElementById("pNacimiento").value=normalizeDateInput(p.nacimiento);
   document.getElementById("pDorsal").value=p.dorsal||"";
   document.getElementById("pObs").value=p.observaciones||"";
@@ -838,31 +886,69 @@ function editPlayer(id){
 function closePlayerModal(){document.getElementById("playerModalBg").classList.add("hidden")}
 function modalBackdrop(e){if(e.target.id==="playerModalBg")closePlayerModal()}
 async function savePlayer(){
+  const categoriaPrincipal=document.getElementById("pCategoria").value;
+  const categoriaSecundaria=document.getElementById("pCategoria2").value;
+
+  if(categoriaSecundaria && categoriaSecundaria===categoriaPrincipal){
+    return showMsg("modalMsg","La segunda categoría debe ser diferente de la categoría principal.","err");
+  }
+
   const payload={
     accion:editingPlayer?"editarJugador":"crearJugador",
     id:document.getElementById("pId").value,
     nombre:document.getElementById("pNombre").value.trim(),
     apellido:document.getElementById("pApellido").value.trim(),
-    categoria:document.getElementById("pCategoria").value,
+    categoria:categoriaPrincipal,
     nacimiento:document.getElementById("pNacimiento").value,
     dorsal:document.getElementById("pDorsal").value.trim(),
     observaciones:document.getElementById("pObs").value.trim()
   };
-  if(!payload.nombre||!payload.apellido||!payload.categoria)
-    return showMsg("modalMsg","Nombre, apellido y categoría son obligatorios.","err");
+
+  if(!payload.nombre||!payload.apellido||!payload.categoria){
+    return showMsg("modalMsg","Nombre, apellido y categoría principal son obligatorios.","err");
+  }
+
   try{
     showMsg("modalMsg","Guardando...");
+
     const d=await apiPost(payload);
-    if(!d.ok)throw new Error(d.error||"No se pudo guardar.");
+    if(!d.ok) throw new Error(d.error||"No se pudo guardar.");
+
+    if(categoriaSecundaria){
+      const payload2={
+        accion:"crearJugador",
+        nombre:payload.nombre,
+        apellido:payload.apellido,
+        categoria:categoriaSecundaria,
+        nacimiento:payload.nacimiento,
+        dorsal:payload.dorsal,
+        observaciones:payload.observaciones
+      };
+
+      const d2=await apiPost(payload2);
+      if(!d2.ok) throw new Error(d2.error||"Se guardó la categoría principal pero falló la segunda categoría.");
+    }
+
     closePlayerModal();
     selectedAdminCategory=payload.categoria;
     document.getElementById("adminCategoryLabel").textContent=selectedAdminCategory;
+
     document.querySelectorAll("#catsPlayers .cat").forEach(btn=>{
       btn.classList.toggle("active",btn.textContent.trim()===selectedAdminCategory);
     });
+
     await loadPlayersAdmin();
-    showMsg("playersMsg",editingPlayer?"Jugador modificado correctamente.":"Jugador cargado correctamente.","ok");
-  }catch(e){showMsg("modalMsg",e.message,"err")}
+
+    showMsg(
+      "playersMsg",
+      categoriaSecundaria
+        ? "Jugador cargado correctamente en las dos categorías."
+        : (editingPlayer ? "Jugador modificado correctamente." : "Jugador cargado correctamente."),
+      "ok"
+    );
+  }catch(e){
+    showMsg("modalMsg",e.message,"err");
+  }
 }
 async function changePlayerStatus(id,activo){
   const p=adminPlayers.find(x=>String(x.id)===String(id));

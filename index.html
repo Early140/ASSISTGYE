@@ -320,7 +320,10 @@ tr:hover td{background:#0a3636}
           </select>
         </div>
         <div class="col-3" style="align-self:end">
-          <button class="btn btn-secondary" style="width:100%" onclick="loadPlayersAdmin()">Actualizar</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <button class="btn btn-secondary" style="width:100%" onclick="loadPlayersAdmin()">Actualizar</button>
+            <button class="btn btn-danger" style="width:100%" onclick="deleteAllInactivePlayers()">Eliminar bajas</button>
+          </div>
         </div>
       </div>
 
@@ -853,7 +856,8 @@ function renderPlayerTable(){
         <button class="btn btn-sm btn-warning" onclick="editPlayer('${escAttr(String(p.id))}')">Modificar</button>
         ${active
           ? `<button class="btn btn-sm btn-danger" onclick="changePlayerStatus('${escAttr(String(p.id))}',false)">Dar de baja</button>`
-          : `<button class="btn btn-sm btn-primary" onclick="changePlayerStatus('${escAttr(String(p.id))}',true)">Reactivar</button>`}
+          : `<button class="btn btn-sm btn-primary" onclick="changePlayerStatus('${escAttr(String(p.id))}',true)">Reactivar</button>
+             <button class="btn btn-sm btn-danger" onclick="deletePlayerPermanently('${escAttr(String(p.id))}')">Eliminar definitivamente</button>`}
       </td>
     </tr>`;
   }).join("");
@@ -1017,6 +1021,89 @@ async function changePlayerStatus(id,activo){
     await loadPlayersAdmin();
     showMsg("playersMsg",activo?"Jugador reactivado.":"Jugador dado de baja. Su historial se conserva.","ok");
   }catch(e){showMsg("playersMsg",e.message,"err")}
+}
+
+async function deletePlayerPermanently(id){
+  const p=adminPlayers.find(x=>String(x.id)===String(id));
+  if(!p)return;
+
+  const active=p.activo===true||String(p.activo).toUpperCase()==="SI";
+  if(active){
+    return showMsg("playersMsg","Solo se pueden eliminar definitivamente jugadores dados de baja.","err");
+  }
+
+  const ok=confirm(
+    `ATENCIÓN: vas a eliminar definitivamente a ${p.nombre} ${p.apellido}.\n\n`+
+    `Se solicitará borrar al jugador y sus registros relacionados. Esta acción no se puede deshacer.\n\n¿Continuar?`
+  );
+  if(!ok)return;
+
+  try{
+    showMsg("playersMsg",`Eliminando definitivamente a ${p.nombre} ${p.apellido}...`);
+    const d=await apiPost({
+      accion:"eliminarJugadorDefinitivo",
+      id:p.id,
+      nombre:p.nombre,
+      apellido:p.apellido,
+      categoria:p.categoria||selectedAdminCategory
+    });
+    if(!d.ok) throw new Error(d.error||"No se pudo eliminar definitivamente al jugador.");
+    await loadPlayersAdmin();
+    showMsg("playersMsg",`${p.nombre} ${p.apellido} fue eliminado definitivamente.`,"ok");
+  }catch(e){
+    showMsg("playersMsg",e.message||"No se pudo eliminar definitivamente.","err");
+  }
+}
+
+async function deleteAllInactivePlayers(){
+  if(!selectedAdminCategory){
+    return showMsg("playersMsg","Elegí una categoría primero.","err");
+  }
+
+  try{
+    showMsg("playersMsg","Buscando jugadores dados de baja...");
+    const d=await apiGet({accion:"jugadores",categoria:selectedAdminCategory,estado:"BAJAS"});
+    if(!d.ok) throw new Error(d.error||"No se pudieron consultar las bajas.");
+
+    const bajas=(d.jugadores||[]).filter(p=>!(p.activo===true||String(p.activo).toUpperCase()==="SI"));
+    if(!bajas.length){
+      return showMsg("playersMsg","No hay jugadores dados de baja en esta categoría.","");
+    }
+
+    const ok=confirm(
+      `ATENCIÓN: vas a eliminar definitivamente ${bajas.length} jugador(es) dados de baja de ${selectedAdminCategory}.\n\n`+
+      `Se solicitará borrar también sus registros relacionados. Esta acción no se puede deshacer.\n\n¿Continuar?`
+    );
+    if(!ok){
+      showMsg("playersMsg","");
+      return;
+    }
+
+    let eliminados=0;
+    const errores=[];
+
+    for(const p of bajas){
+      const r=await apiPost({
+        accion:"eliminarJugadorDefinitivo",
+        id:p.id,
+        nombre:p.nombre,
+        apellido:p.apellido,
+        categoria:p.categoria||selectedAdminCategory
+      });
+      if(r.ok) eliminados++;
+      else errores.push(`${p.apellido}, ${p.nombre}: ${r.error||"error"}`);
+    }
+
+    await loadPlayersAdmin();
+
+    if(errores.length){
+      showMsg("playersMsg",`Se eliminaron ${eliminados} de ${bajas.length}. ${errores.length} no pudieron eliminarse.`,"err");
+    }else{
+      showMsg("playersMsg",`Se eliminaron definitivamente ${eliminados} jugador(es) dados de baja.`,"ok");
+    }
+  }catch(e){
+    showMsg("playersMsg",e.message||"No se pudieron eliminar las bajas.","err");
+  }
 }
 
 /* RESUMEN */

@@ -885,6 +885,26 @@ function editPlayer(id){
 }
 function closePlayerModal(){document.getElementById("playerModalBg").classList.add("hidden")}
 function modalBackdrop(e){if(e.target.id==="playerModalBg")closePlayerModal()}
+async function playerExistsInCategory(nombre,apellido,categoria,excludeId=""){
+  const normalize=s=>String(s||"")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/\s+/g," ");
+
+  const d=await apiGet({accion:"jugadores",categoria,estado:"TODOS"});
+  if(!d.ok) throw new Error(d.error||"No se pudo verificar jugadores existentes.");
+
+  const n=normalize(nombre);
+  const a=normalize(apellido);
+
+  return (d.jugadores||[]).some(j=>{
+    if(excludeId && String(j.id)===String(excludeId)) return false;
+    return normalize(j.nombre)===n && normalize(j.apellido)===a;
+  });
+}
+
 async function savePlayer(){
   const categoriaPrincipal=document.getElementById("pCategoria").value;
   const categoriaSecundaria=document.getElementById("pCategoria2").value;
@@ -909,6 +929,42 @@ async function savePlayer(){
   }
 
   try{
+    showMsg("modalMsg","Verificando duplicados...");
+
+    const excludeId=editingPlayer ? payload.id : "";
+
+    const duplicadoPrincipal=await playerExistsInCategory(
+      payload.nombre,
+      payload.apellido,
+      categoriaPrincipal,
+      excludeId
+    );
+
+    if(duplicadoPrincipal){
+      return showMsg(
+        "modalMsg",
+        `El jugador ${payload.nombre} ${payload.apellido} ya está cargado en ${categoriaPrincipal}.`,
+        "err"
+      );
+    }
+
+    if(categoriaSecundaria){
+      const duplicadoSecundaria=await playerExistsInCategory(
+        payload.nombre,
+        payload.apellido,
+        categoriaSecundaria,
+        ""
+      );
+
+      if(duplicadoSecundaria){
+        return showMsg(
+          "modalMsg",
+          `El jugador ${payload.nombre} ${payload.apellido} ya está cargado en ${categoriaSecundaria}.`,
+          "err"
+        );
+      }
+    }
+
     showMsg("modalMsg","Guardando...");
 
     const d=await apiPost(payload);

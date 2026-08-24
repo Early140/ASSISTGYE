@@ -434,7 +434,7 @@ tr:hover td{background:#0a3636}
       </div>
       <div class="col-12">
         <div class="notice">
-          Si elegís una segunda categoría, el jugador pertenecerá a ambas. En FUNDAMENTOS y FISICO aparecerá una sola vez.
+          Si elegís una segunda categoría, el jugador pertenecerá a ambas. En FUNDAMENTOS MAÑANA, FUNDAMENTOS TURNO TARDE y FISICO aparecerá una sola vez.
         </div>
       </div>
     </div>
@@ -465,7 +465,8 @@ const PLAYER_CATEGORIES = [
 ];
 
 const SPECIAL_CATEGORIES = {
-  "FUNDAMENTOS": [...PLAYER_CATEGORIES],
+  "FUNDAMENTOS MAÑANA": [...PLAYER_CATEGORIES],
+  "FUNDAMENTOS TURNO TARDE": [...PLAYER_CATEGORIES],
   "FISICO FEMENINO": [
     "MINI (U11) FEMENINO",
     "U13 FEMENINO",
@@ -482,7 +483,8 @@ const SPECIAL_CATEGORIES = {
 
 const ATTENDANCE_CATEGORIES = [
   ...PLAYER_CATEGORIES,
-  "FUNDAMENTOS",
+  "FUNDAMENTOS MAÑANA",
+  "FUNDAMENTOS TURNO TARDE",
   "FISICO FEMENINO",
   "FISICO MASCULINO"
 ];

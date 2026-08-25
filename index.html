@@ -384,7 +384,7 @@ tr:hover td{background:#0a3636}
     <div class="card" style="margin-top:18px">
       <div class="card-title">
         <h3>Clases por fecha</h3>
-        <span class="badge">Una sola clase por día y categoría</span>
+        <span class="badge">Fundamentos mañana + tarde del mismo día = 1 sola clase</span>
       </div>
       <div class="table-wrap">
         <table>
@@ -506,7 +506,12 @@ const ATTENDANCE_CATEGORIES = [
   "FISICO MASCULINO"
 ];
 
-const REPORT_CATEGORIES = ATTENDANCE_CATEGORIES;
+const REPORT_CATEGORIES = [
+  ...PLAYER_CATEGORIES,
+  "FUNDAMENTOS (COMBINADO)",
+  "FISICO FEMENINO",
+  "FISICO MASCULINO"
+];
 
 const COACHES = [
   "LUCAS/EVE",

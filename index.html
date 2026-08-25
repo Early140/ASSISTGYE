@@ -340,6 +340,7 @@ tr:hover td{background:#0a3636}
               <th>Jugador</th>
               <th>Nacimiento</th>
               <th>Dorsal</th>
+              <th>Entrenador</th>
               <th>Estado</th>
               <th>Observaciones</th>
               <th>Acciones</th>
@@ -431,11 +432,19 @@ tr:hover td{background:#0a3636}
       </div>
       <div class="col-6">
         <label>Categoría principal *</label>
-        <select id="pCategoria"></select>
+        <select id="pCategoria" onchange="syncCoachSelectors()"></select>
+      </div>
+      <div class="col-6" id="coachWrap1">
+        <label>Entrenador categoría principal *</label>
+        <select id="pEntrenador1"></select>
       </div>
       <div class="col-6">
         <label>Segunda categoría (opcional)</label>
-        <select id="pCategoria2"></select>
+        <select id="pCategoria2" onchange="syncCoachSelectors()"></select>
+      </div>
+      <div class="col-6" id="coachWrap2">
+        <label>Entrenador segunda categoría</label>
+        <select id="pEntrenador2"></select>
       </div>
       <div class="col-3">
         <label>Fecha nacimiento</label>
@@ -451,7 +460,7 @@ tr:hover td{background:#0a3636}
       </div>
       <div class="col-12">
         <div class="notice">
-          Si elegís una segunda categoría, el jugador pertenecerá a ambas. En FUNDAMENTOS MAÑANA, FUNDAMENTOS TURNO TARDE y FISICO aparecerá una sola vez.
+          El entrenador se asigna únicamente en MINI (U11) MASCULINO, U13 MASCULINO, U15 MASCULINO, U17 MASCULINO y U21/PRIMERA. Si un jugador está en dos categorías masculinas, puede tener un entrenador distinto en cada una. El resto de las categorías funciona sin filtro por entrenador.
         </div>
       </div>
     </div>
@@ -480,6 +489,18 @@ const PLAYER_CATEGORIES = [
   "U17 MASCULINO",
   "U21/PRIMERA"
 ];
+
+const COACH_FILTER_CATEGORIES = [
+  "MINI (U11) MASCULINO",
+  "U13 MASCULINO",
+  "U15 MASCULINO",
+  "U17 MASCULINO",
+  "U21/PRIMERA"
+];
+
+function categoryUsesCoach(cat){
+  return COACH_FILTER_CATEGORIES.includes(String(cat||""));
+}
 
 const SPECIAL_CATEGORIES = {
   "FUNDAMENTOS MAÑANA": [...PLAYER_CATEGORIES],
@@ -566,9 +587,36 @@ function fillSelects(){
 }
 
 function fillCoachSelect(){
-  const sel=document.getElementById("attProfesor");
-  sel.innerHTML='<option value="">Seleccionar profesor</option>'+
+  const options='<option value="">Seleccionar profesor</option>'+
     COACHES.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join("");
+
+  document.getElementById("attProfesor").innerHTML=options;
+  document.getElementById("pEntrenador1").innerHTML=options;
+  document.getElementById("pEntrenador2").innerHTML=
+    '<option value="">Sin entrenador asignado</option>'+
+    COACHES.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join("");
+}
+
+function syncCoachSelectors(){
+  const categoria1=document.getElementById("pCategoria").value;
+  const categoria2=document.getElementById("pCategoria2").value;
+
+  const usa1=categoryUsesCoach(categoria1);
+  const usa2=categoryUsesCoach(categoria2);
+
+  const wrap1=document.getElementById("coachWrap1");
+  const wrap2=document.getElementById("coachWrap2");
+  const entrenador1=document.getElementById("pEntrenador1");
+  const entrenador2=document.getElementById("pEntrenador2");
+
+  wrap1.classList.toggle("hidden",!usa1);
+  wrap2.classList.toggle("hidden",!usa2);
+
+  entrenador1.disabled=!usa1;
+  entrenador2.disabled=!usa2;
+
+  if(!usa1) entrenador1.value="";
+  if(!usa2) entrenador2.value="";
 }
 
 function setView(view){
@@ -688,7 +736,12 @@ async function loadAttendancePlayers(){
     }else{
       const d=await apiGet({accion:"jugadores",categoria:selectedAttCategory,estado:"ACTIVOS"});
       if(!d.ok) throw new Error(d.error||"No se pudo cargar el plantel.");
-      jugadores=(d.jugadores||[]).map(j=>({...j,categoriaOrigen:selectedAttCategory}));
+      jugadores=(d.jugadores||[])
+        .filter(j=>{
+          if(!categoryUsesCoach(selectedAttCategory)) return true;
+          return String(j.entrenador||"").trim()===profesor;
+        })
+        .map(j=>({...j,categoriaOrigen:selectedAttCategory}));
     }
 
     attPlayers=jugadores.map(j=>({...j,estado:"AUSENTE"}));
@@ -711,7 +764,13 @@ async function loadAttendancePlayers(){
     }else if(tieneGuardados){
       showMsg("attMsg",`${attPlayers.length} jugadores cargados. Esta asistencia ya existía y podés modificarla.`,"ok");
     }else{
-      showMsg("attMsg","No hay jugadores activos para esta categoría.","");
+      showMsg(
+        "attMsg",
+        categoryUsesCoach(selectedAttCategory)
+          ? `No hay jugadores asignados a ${profesor} en ${selectedAttCategory}.`
+          : "No hay jugadores activos para esta categoría.",
+        ""
+      );
     }
   }catch(e){
     showMsg("attMsg",e.message,"err");
@@ -843,7 +902,7 @@ async function saveAttendance(silent=false){
 /* JUGADORES */
 async function loadPlayersAdmin(){
   if(!selectedAdminCategory){
-    document.getElementById("playersTbody").innerHTML='<tr><td colspan="6" class="empty">Elegí una categoría.</td></tr>';
+    document.getElementById("playersTbody").innerHTML='<tr><td colspan="7" class="empty">Elegí una categoría.</td></tr>';
     return;
   }
   const filter=document.getElementById("playerStatusFilter").value;
@@ -866,7 +925,7 @@ function renderPlayerTable(){
   });
   const tb=document.getElementById("playersTbody");
   if(!rows.length){
-    tb.innerHTML='<tr><td colspan="6" class="empty">No hay jugadores para mostrar.</td></tr>';return;
+    tb.innerHTML='<tr><td colspan="7" class="empty">No hay jugadores para mostrar.</td></tr>';return;
   }
   tb.innerHTML=rows.map(p=>{
     const active=p.activo===true||String(p.activo).toUpperCase()==="SI";
@@ -874,6 +933,7 @@ function renderPlayerTable(){
       <td><strong>${esc(p.apellido)}, ${esc(p.nombre)}</strong></td>
       <td>${esc(p.nacimiento||"—")}</td>
       <td>${esc(String(p.dorsal||"—"))}</td>
+      <td>${esc(p.entrenador||"—")}</td>
       <td>${active?'<span class="badge">ACTIVO</span>':'<span class="badge">BAJA</span>'}</td>
       <td>${esc(p.observaciones||"—")}</td>
       <td class="action-cell">
@@ -892,6 +952,9 @@ function openPlayerModal(){
   ["pId","pNombre","pApellido","pNacimiento","pDorsal","pObs"].forEach(id=>document.getElementById(id).value="");
   document.getElementById("pCategoria").value=selectedAdminCategory||PLAYER_CATEGORIES[0];
   document.getElementById("pCategoria2").value="";
+  document.getElementById("pEntrenador1").value="";
+  document.getElementById("pEntrenador2").value="";
+  syncCoachSelectors();
   showMsg("modalMsg","");
   document.getElementById("playerModalBg").classList.remove("hidden");
 }
@@ -905,6 +968,9 @@ function editPlayer(id){
   document.getElementById("pApellido").value=p.apellido||"";
   document.getElementById("pCategoria").value=p.categoria||selectedAdminCategory;
   document.getElementById("pCategoria2").value="";
+  document.getElementById("pEntrenador1").value=p.entrenador||"";
+  document.getElementById("pEntrenador2").value="";
+  syncCoachSelectors();
   document.getElementById("pNacimiento").value=normalizeDateInput(p.nacimiento);
   document.getElementById("pDorsal").value=p.dorsal||"";
   document.getElementById("pObs").value=p.observaciones||"";
@@ -936,6 +1002,8 @@ async function playerExistsInCategory(nombre,apellido,categoria,excludeId=""){
 async function savePlayer(){
   const categoriaPrincipal=document.getElementById("pCategoria").value;
   const categoriaSecundaria=document.getElementById("pCategoria2").value;
+  const entrenadorPrincipal=document.getElementById("pEntrenador1").value;
+  const entrenadorSecundario=document.getElementById("pEntrenador2").value;
 
   if(categoriaSecundaria && categoriaSecundaria===categoriaPrincipal){
     return showMsg("modalMsg","La segunda categoría debe ser diferente de la categoría principal.","err");
@@ -947,6 +1015,7 @@ async function savePlayer(){
     nombre:document.getElementById("pNombre").value.trim(),
     apellido:document.getElementById("pApellido").value.trim(),
     categoria:categoriaPrincipal,
+    entrenador:categoryUsesCoach(categoriaPrincipal) ? entrenadorPrincipal : "",
     nacimiento:document.getElementById("pNacimiento").value,
     dorsal:document.getElementById("pDorsal").value.trim(),
     observaciones:document.getElementById("pObs").value.trim()
@@ -954,6 +1023,14 @@ async function savePlayer(){
 
   if(!payload.nombre||!payload.apellido||!payload.categoria){
     return showMsg("modalMsg","Nombre, apellido y categoría principal son obligatorios.","err");
+  }
+
+  if(categoryUsesCoach(categoriaPrincipal) && !payload.entrenador){
+    return showMsg("modalMsg","Seleccioná el entrenador de la categoría principal.","err");
+  }
+
+  if(categoriaSecundaria && categoryUsesCoach(categoriaSecundaria) && !entrenadorSecundario){
+    return showMsg("modalMsg","Seleccioná el entrenador correspondiente a la segunda categoría.","err");
   }
 
   try{
@@ -1004,6 +1081,7 @@ async function savePlayer(){
         nombre:payload.nombre,
         apellido:payload.apellido,
         categoria:categoriaSecundaria,
+        entrenador:categoryUsesCoach(categoriaSecundaria) ? entrenadorSecundario : "",
         nacimiento:payload.nacimiento,
         dorsal:payload.dorsal,
         observaciones:payload.observaciones

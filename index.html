@@ -382,6 +382,23 @@ tr:hover td{background:#0a3636}
     </div>
 
     <div class="card" style="margin-top:18px">
+      <div class="card-title">
+        <h3>Clases por fecha</h3>
+        <span class="badge">Una sola clase por día y categoría</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Categoría</th><th>Profesor/es</th><th>Registros</th></tr>
+          </thead>
+          <tbody id="classesTbody">
+            <tr><td colspan="4" class="empty">Consultá una categoría y un mes.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:18px">
       <div class="card-title"><h3>Asistencia individual</h3></div>
       <div class="table-wrap">
         <table>
@@ -1113,14 +1130,31 @@ async function loadSummary(){
   const categoria=document.getElementById("sumCategory").value;
   const mes=document.getElementById("sumMonth").value;
   if(!mes)return showMsg("summaryMsg","Seleccioná un mes.","err");
+
   try{
     showMsg("summaryMsg","Calculando...");
+
     const d=await apiGet({accion:"resumenMes",categoria,mes});
     if(!d.ok)throw new Error(d.error||"No se pudo consultar.");
+
     document.getElementById("sPractices").textContent=d.practicas||0;
     document.getElementById("sAvg").textContent=(d.promedioAsistencia||0)+"%";
     document.getElementById("sPlayers").textContent=d.jugadores||0;
     document.getElementById("sRecords").textContent=d.registros||0;
+
+    const classesTbody=document.getElementById("classesTbody");
+    const clases=Array.isArray(d.clases)?d.clases:[];
+
+    classesTbody.innerHTML=clases.length
+      ? clases.map(c=>`
+        <tr>
+          <td><strong>${esc(formatDateAR(c.fecha))}</strong></td>
+          <td>${esc(c.categoria||categoria)}</td>
+          <td>${esc(c.profesores||"—")}</td>
+          <td>${esc(String(c.registros||0))}</td>
+        </tr>`).join("")
+      : '<tr><td colspan="4" class="empty">No hay clases registradas para este período.</td></tr>';
+
     const tb=document.getElementById("summaryTbody");
     tb.innerHTML=(d.detalle||[]).length?(d.detalle||[]).map(x=>`
       <tr>
@@ -1128,8 +1162,17 @@ async function loadSummary(){
         <td>${x.presente}</td><td>${x.ausente}</td><td>${x.justificado}</td><td>${x.tarde}</td>
         <td><strong>${x.porcentaje}%</strong></td>
       </tr>`).join(""):'<tr><td colspan="6" class="empty">Sin registros para este mes.</td></tr>';
+
     showMsg("summaryMsg","","");
-  }catch(e){showMsg("summaryMsg",e.message,"err")}
+  }catch(e){
+    showMsg("summaryMsg",e.message,"err");
+  }
+}
+
+function formatDateAR(v){
+  const s=String(v||"");
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : (s||"—");
 }
 
 
